@@ -1,0 +1,17 @@
+{
+  "id": "paper",
+  "name": "Paper",
+  "version": 1,
+  "brightness": "light",
+  "colors": {
+    "background": "#FFFFFF",
+    "foreground": "#000000",
+    "focus": "#0A9F3E",
+    "rest": "#E02424",
+    "warning": "#D99A00"
+  },
+  "radius": 12,
+  "led": { "style": "solid", "shape": "beveled", "offOpacity": 0.08, "glow": 0, "slant": 0.08 },
+  "sounds": { "focusEnd": "chime", "restEnd": "bell", "complete": "complete" },
+  "renderer": { "type": "led7" }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "traffic-light",
+  "name": "Traffic Light",
+  "version": 1,
+  "brightness": "dark",
+  "colors": {
+    "background": "#000000",
+    "foreground": "#FFFFFF",
+    "focus": "#2BFF6B",
+    "rest": "#FF3030",
+    "warning": "#FFC400"
+  },
+  "radius": 12,
+  "led": { "style": "solid", "shape": "beveled", "offOpacity": 0.07, "glow": 1.0, "slant": 0.08 },
+  "sounds": { "focusEnd": "chime", "restEnd": "bell", "complete": "complete" },
+  "renderer": { "type": "led7" }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "amber",
+  "name": "Amber Mono",
+  "version": 1,
+  "brightness": "dark",
+  "colors": {
+    "background": "#0B0905",
+    "foreground": "#FFE7B3",
+    "focus": "#FFB000",
+    "rest": "#FF5A1F",
+    "warning": "#FFE066"
+  },
+  "radius": 4,
+  "font": { "family": "monospace" },
+  "led": { "style": "scanlines", "shape": "rect", "offOpacity": 0.1, "glow": 1.4, "slant": 0 },
+  "heatmap": { "empty": "#1E1A12", "low": "#4A3410", "high": "#FFB000" },
+  "sounds": { "focusEnd": "bell", "restEnd": "chime", "complete": "complete" },
+  "renderer": { "type": "led7" }
+}

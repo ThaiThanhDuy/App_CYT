@@ -1,0 +1,15 @@
+# Sinh icon app từ assets/icon/ (nguồn gốc: assets/icon/app_icon.svg).
+# Chạy lại sau khi đổi icon:  dart run flutter_launcher_icons
+flutter_launcher_icons:
+  # Android: ghi đè mipmap/ic_launcher (manifest giữ nguyên).
+  android: true
+  image_path: "assets/icon/app_icon_1024.png"
+  min_sdk_android: 21
+  # Android 8+: adaptive icon = nền trắng + hình (tool tự thụt 16% mỗi bên,
+  # nên ảnh foreground để hình chiếm ~85% là vừa vùng an toàn).
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  # iOS không cho icon trong suốt → nền trắng.
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#FFFFFF"
