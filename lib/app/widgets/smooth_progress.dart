@@ -11,7 +11,10 @@ enum ProgressStyle {
   bars('Bars'),
 
   /// Các cột đối xứng qua đường giữa (kiểu sóng âm thanh).
-  wave('Wave');
+  wave('Wave'),
+
+  /// Đường gợn sóng hình sin mảnh, sóng trôi nhẹ khi đang chạy.
+  squiggle('Squiggle');
 
   const ProgressStyle(this.label);
   final String label;
@@ -96,6 +99,19 @@ class _SmoothProgressState extends State<SmoothProgress>
           backgroundColor: widget.trackColor,
         ),
       ),
+      ProgressStyle.squiggle => SizedBox(
+        // Sóng chỉ cần thấp; không cao bằng kiểu cột.
+        height: math.min(widget.barHeight, 18),
+        width: double.infinity,
+        child: CustomPaint(
+          painter: _SquigglePainter(
+            progress: v,
+            color: widget.color,
+            trackColor: widget.trackColor,
+            phase: _wobble,
+          ),
+        ),
+      ),
       ProgressStyle.bars || ProgressStyle.wave => SizedBox(
         height: widget.barHeight,
         width: double.infinity,
@@ -111,6 +127,61 @@ class _SmoothProgressState extends State<SmoothProgress>
       ),
     },
   );
+}
+
+/// Đường gợn sóng: cả đường màu nền, phần đã chạy tô màu; [phase] làm sóng
+/// trôi về phía trước khi đang chạy.
+class _SquigglePainter extends CustomPainter {
+  _SquigglePainter({
+    required this.progress,
+    required this.color,
+    required this.trackColor,
+    required this.phase,
+  }) : super(repaint: phase);
+
+  final double progress;
+  final Color color;
+  final Color trackColor;
+  final Animation<double> phase;
+
+  /// Bước sóng (px) và độ dày nét.
+  static const double _wavelength = 18;
+  static const double _stroke = 2.6;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final mid = size.height / 2;
+    final amplitude = math.max(1.5, mid - _stroke);
+    // Trôi hai bước sóng mỗi vòng của animation, từ trái sang phải
+    // (cùng chiều tiến trình).
+    final shift = phase.value * 2 * math.pi * 2;
+    final start = _stroke / 2;
+    final end = size.width - _stroke / 2;
+    final path = Path()..moveTo(start, mid);
+    for (var x = start; x <= end; x += 1.5) {
+      path.lineTo(
+        x,
+        mid + amplitude * math.sin(2 * math.pi * x / _wavelength + shift),
+      );
+    }
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(path, paint..color = trackColor);
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(0, 0, size.width * progress, size.height));
+    canvas.drawPath(path, paint..color = color);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_SquigglePainter old) =>
+      old.progress != progress ||
+      old.color != color ||
+      old.trackColor != trackColor;
 }
 
 class _BarsPainter extends CustomPainter {

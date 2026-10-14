@@ -56,74 +56,38 @@ void main() {
   });
 
   group('buildDotFrame (kiểu chấm LED)', () {
-    // Mỗi đoạn có 2 hàng chấm; số chấm mỗi hàng giống nhau ở mọi đoạn.
-    final perSegment = segmentDots(Segment.a).length;
+    int dotsOf(Iterable<Segment> segs) =>
+        segs.fold(0, (n, s) => n + segmentDots(s).length);
 
-    test('mỗi đoạn là 2 hàng chấm, số chấm chẵn', () {
-      expect(perSegment, greaterThanOrEqualTo(2));
-      expect(perSegment.isEven, isTrue);
+    test('mỗi đoạn 3 hàng: 12 · 14 · 12 chấm (đầu nhọn)', () {
       for (final seg in Segment.values) {
-        expect(segmentDots(seg).length, perSegment);
+        expect(segmentDots(seg).length, 38);
       }
     });
 
     test('"88:88" bật toàn bộ chấm', () {
       final frame = buildDotFrame('88:88');
-      expect(frame.on.length, 4 * 7 * perSegment + 8);
+      expect(frame.on.length, 4 * dotsOf(Segment.values) + 18);
       expect(frame.off, isEmpty);
     });
 
     test('"11:11" chỉ bật chấm của đoạn b, c và dấu hai chấm', () {
       final frame = buildDotFrame('11:11');
-      expect(frame.on.length, 4 * 2 * perSegment + 8);
-      expect(frame.off.length, 4 * 5 * perSegment);
+      final bc = dotsOf(const [Segment.b, Segment.c]);
+      expect(frame.on.length, 4 * bc + 18);
+      expect(frame.off.length, 4 * (dotsOf(Segment.values) - bc));
     });
 
-    test('chấm của đoạn + góc nằm trên lưới chung, không chấm nào đè nhau', () {
-      final dots = [
-        for (final seg in Segment.values) ...segmentDots(seg),
-        for (final corner in LedCorner.values) ...cornerDots(corner),
-      ];
-      // 7 đoạn × 16 + 4 góc ngoài × 1 (bo tròn) + 2 góc giữa × 4.
-      expect(dots.length, 7 * 16 + 4 * 1 + 2 * 4);
+    test('chấm các đoạn nằm trên lưới chung, không chấm nào đè nhau', () {
+      final dots = [for (final seg in Segment.values) ...segmentDots(seg)];
       for (var i = 0; i < dots.length; i++) {
         for (var j = i + 1; j < dots.length; j++) {
           expect(
             (dots[i] - dots[j]).distance,
             greaterThanOrEqualTo(ledDotPitch * 0.999),
-            reason: 'chấm ${dots[i]} và ${dots[j]} quá gần',
           );
         }
       }
-    });
-
-    test('góc giữa: nét thẳng giữ đủ 2×2, gấp khúc chỉ giữ chấm trong', () {
-      // Số 0: f + e sáng, g tắt → nét thẳng qua giữa.
-      expect(
-        cornerCells(LedCorner.midLeft, lit: {Segment.f, Segment.e}),
-        hasLength(4),
-      );
-      // Số 4: f + g sáng, e tắt → gấp khúc, chỉ chấm trong ở hàng trên.
-      expect(cornerCells(LedCorner.midLeft, lit: {Segment.f, Segment.g}), [
-        (1, 10),
-      ]);
-      // Số 2: g + e sáng → chấm trong ở hàng dưới.
-      expect(cornerCells(LedCorner.midLeft, lit: {Segment.g, Segment.e}), [
-        (1, 11),
-      ]);
-      // Bên phải đối xứng.
-      expect(cornerCells(LedCorner.midRight, lit: {Segment.b, Segment.g}), [
-        (10, 10),
-      ]);
-      expect(cornerCells(LedCorner.midRight, lit: const {}), isEmpty);
-    });
-
-    test('góc sáng theo đoạn kề sáng nhất', () {
-      final levels = cornerLevels({Segment.a: 1, Segment.f: 0.4});
-      expect(levels[LedCorner.topLeft], 1);
-      expect(levels[LedCorner.topRight], 1);
-      expect(levels[LedCorner.midLeft], 0.4);
-      expect(levels.containsKey(LedCorner.bottomRight), isFalse);
     });
 
     test('mọi chấm nằm trong khung', () {

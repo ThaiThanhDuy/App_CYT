@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'app/app_restarter.dart';
+import 'data/app_db.dart';
 import 'data/data_providers.dart';
 import 'features/alerts/application/alert_providers.dart';
 import 'features/alerts/data/notification_service.dart';
@@ -23,13 +25,20 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final notifications = NotificationService();
   await notifications.init();
+  // DB mở một lần cho cả vòng đời app: dựng lại app (sau khi nạp bản sao
+  // lưu) không mở thêm kết nối mới tới cùng file.
+  final db = AppDatabase();
   runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        notificationServiceProvider.overrideWithValue(notifications),
-      ],
-      child: const CytApp(),
+    AppRestarter(
+      builder: (key) => ProviderScope(
+        key: key,
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          notificationServiceProvider.overrideWithValue(notifications),
+          appDatabaseProvider.overrideWithValue(db),
+        ],
+        child: const CytApp(),
+      ),
     ),
   );
 }

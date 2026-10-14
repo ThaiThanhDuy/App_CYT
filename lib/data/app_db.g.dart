@@ -809,15 +809,479 @@ class CompletedSessionsCompanion extends UpdateCompanion<CompletedSession> {
   }
 }
 
+class $TaskBlocksTable extends TaskBlocks
+    with TableInfo<$TaskBlocksTable, TaskBlockRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TaskBlocksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startMinuteMeta = const VerificationMeta(
+    'startMinute',
+  );
+  @override
+  late final GeneratedColumn<int> startMinute = GeneratedColumn<int>(
+    'start_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endMinuteMeta = const VerificationMeta(
+    'endMinute',
+  );
+  @override
+  late final GeneratedColumn<int> endMinute = GeneratedColumn<int>(
+    'end_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _presetIdMeta = const VerificationMeta(
+    'presetId',
+  );
+  @override
+  late final GeneratedColumn<int> presetId = GeneratedColumn<int>(
+    'preset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES presets (id) ON DELETE SET NULL',
+    ),
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+    'color',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    day,
+    startMinute,
+    endMinute,
+    presetId,
+    color,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'task_blocks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TaskBlockRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('start_minute')) {
+      context.handle(
+        _startMinuteMeta,
+        startMinute.isAcceptableOrUnknown(
+          data['start_minute']!,
+          _startMinuteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startMinuteMeta);
+    }
+    if (data.containsKey('end_minute')) {
+      context.handle(
+        _endMinuteMeta,
+        endMinute.isAcceptableOrUnknown(data['end_minute']!, _endMinuteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endMinuteMeta);
+    }
+    if (data.containsKey('preset_id')) {
+      context.handle(
+        _presetIdMeta,
+        presetId.isAcceptableOrUnknown(data['preset_id']!, _presetIdMeta),
+      );
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TaskBlockRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TaskBlockRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+      startMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_minute'],
+      )!,
+      endMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_minute'],
+      )!,
+      presetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}preset_id'],
+      ),
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color'],
+      ),
+    );
+  }
+
+  @override
+  $TaskBlocksTable createAlias(String alias) {
+    return $TaskBlocksTable(attachedDatabase, alias);
+  }
+}
+
+class TaskBlockRow extends DataClass implements Insertable<TaskBlockRow> {
+  final int id;
+  final String title;
+
+  /// Ngày của block, dạng yyyy-MM-dd theo giờ máy.
+  final String day;
+
+  /// Giờ bắt đầu / kết thúc, tính bằng phút từ 00:00 (0–1440).
+  final int startMinute;
+  final int endMinute;
+
+  /// Session gắn với block (tuỳ chọn); xoá session thì block vẫn giữ.
+  final int? presetId;
+
+  /// Màu block (ARGB); null = xám mặc định.
+  final int? color;
+  const TaskBlockRow({
+    required this.id,
+    required this.title,
+    required this.day,
+    required this.startMinute,
+    required this.endMinute,
+    this.presetId,
+    this.color,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['title'] = Variable<String>(title);
+    map['day'] = Variable<String>(day);
+    map['start_minute'] = Variable<int>(startMinute);
+    map['end_minute'] = Variable<int>(endMinute);
+    if (!nullToAbsent || presetId != null) {
+      map['preset_id'] = Variable<int>(presetId);
+    }
+    if (!nullToAbsent || color != null) {
+      map['color'] = Variable<int>(color);
+    }
+    return map;
+  }
+
+  TaskBlocksCompanion toCompanion(bool nullToAbsent) {
+    return TaskBlocksCompanion(
+      id: Value(id),
+      title: Value(title),
+      day: Value(day),
+      startMinute: Value(startMinute),
+      endMinute: Value(endMinute),
+      presetId: presetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(presetId),
+      color: color == null && nullToAbsent
+          ? const Value.absent()
+          : Value(color),
+    );
+  }
+
+  factory TaskBlockRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TaskBlockRow(
+      id: serializer.fromJson<int>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      day: serializer.fromJson<String>(json['day']),
+      startMinute: serializer.fromJson<int>(json['startMinute']),
+      endMinute: serializer.fromJson<int>(json['endMinute']),
+      presetId: serializer.fromJson<int?>(json['presetId']),
+      color: serializer.fromJson<int?>(json['color']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'title': serializer.toJson<String>(title),
+      'day': serializer.toJson<String>(day),
+      'startMinute': serializer.toJson<int>(startMinute),
+      'endMinute': serializer.toJson<int>(endMinute),
+      'presetId': serializer.toJson<int?>(presetId),
+      'color': serializer.toJson<int?>(color),
+    };
+  }
+
+  TaskBlockRow copyWith({
+    int? id,
+    String? title,
+    String? day,
+    int? startMinute,
+    int? endMinute,
+    Value<int?> presetId = const Value.absent(),
+    Value<int?> color = const Value.absent(),
+  }) => TaskBlockRow(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    day: day ?? this.day,
+    startMinute: startMinute ?? this.startMinute,
+    endMinute: endMinute ?? this.endMinute,
+    presetId: presetId.present ? presetId.value : this.presetId,
+    color: color.present ? color.value : this.color,
+  );
+  TaskBlockRow copyWithCompanion(TaskBlocksCompanion data) {
+    return TaskBlockRow(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      day: data.day.present ? data.day.value : this.day,
+      startMinute: data.startMinute.present
+          ? data.startMinute.value
+          : this.startMinute,
+      endMinute: data.endMinute.present ? data.endMinute.value : this.endMinute,
+      presetId: data.presetId.present ? data.presetId.value : this.presetId,
+      color: data.color.present ? data.color.value : this.color,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TaskBlockRow(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('day: $day, ')
+          ..write('startMinute: $startMinute, ')
+          ..write('endMinute: $endMinute, ')
+          ..write('presetId: $presetId, ')
+          ..write('color: $color')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, title, day, startMinute, endMinute, presetId, color);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TaskBlockRow &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.day == this.day &&
+          other.startMinute == this.startMinute &&
+          other.endMinute == this.endMinute &&
+          other.presetId == this.presetId &&
+          other.color == this.color);
+}
+
+class TaskBlocksCompanion extends UpdateCompanion<TaskBlockRow> {
+  final Value<int> id;
+  final Value<String> title;
+  final Value<String> day;
+  final Value<int> startMinute;
+  final Value<int> endMinute;
+  final Value<int?> presetId;
+  final Value<int?> color;
+  const TaskBlocksCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.day = const Value.absent(),
+    this.startMinute = const Value.absent(),
+    this.endMinute = const Value.absent(),
+    this.presetId = const Value.absent(),
+    this.color = const Value.absent(),
+  });
+  TaskBlocksCompanion.insert({
+    this.id = const Value.absent(),
+    required String title,
+    required String day,
+    required int startMinute,
+    required int endMinute,
+    this.presetId = const Value.absent(),
+    this.color = const Value.absent(),
+  }) : title = Value(title),
+       day = Value(day),
+       startMinute = Value(startMinute),
+       endMinute = Value(endMinute);
+  static Insertable<TaskBlockRow> custom({
+    Expression<int>? id,
+    Expression<String>? title,
+    Expression<String>? day,
+    Expression<int>? startMinute,
+    Expression<int>? endMinute,
+    Expression<int>? presetId,
+    Expression<int>? color,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (day != null) 'day': day,
+      if (startMinute != null) 'start_minute': startMinute,
+      if (endMinute != null) 'end_minute': endMinute,
+      if (presetId != null) 'preset_id': presetId,
+      if (color != null) 'color': color,
+    });
+  }
+
+  TaskBlocksCompanion copyWith({
+    Value<int>? id,
+    Value<String>? title,
+    Value<String>? day,
+    Value<int>? startMinute,
+    Value<int>? endMinute,
+    Value<int?>? presetId,
+    Value<int?>? color,
+  }) {
+    return TaskBlocksCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      day: day ?? this.day,
+      startMinute: startMinute ?? this.startMinute,
+      endMinute: endMinute ?? this.endMinute,
+      presetId: presetId ?? this.presetId,
+      color: color ?? this.color,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (startMinute.present) {
+      map['start_minute'] = Variable<int>(startMinute.value);
+    }
+    if (endMinute.present) {
+      map['end_minute'] = Variable<int>(endMinute.value);
+    }
+    if (presetId.present) {
+      map['preset_id'] = Variable<int>(presetId.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TaskBlocksCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('day: $day, ')
+          ..write('startMinute: $startMinute, ')
+          ..write('endMinute: $endMinute, ')
+          ..write('presetId: $presetId, ')
+          ..write('color: $color')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PresetsTable presets = $PresetsTable(this);
   late final $CompletedSessionsTable completedSessions =
       $CompletedSessionsTable(this);
+  late final $TaskBlocksTable taskBlocks = $TaskBlocksTable(this);
   late final Index idxCompletedSessionsDay = Index(
     'idx_completed_sessions_day',
     'CREATE INDEX idx_completed_sessions_day ON completed_sessions (day)',
+  );
+  late final Index idxTaskBlocksDay = Index(
+    'idx_task_blocks_day',
+    'CREATE INDEX idx_task_blocks_day ON task_blocks (day)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -826,7 +1290,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     presets,
     completedSessions,
+    taskBlocks,
     idxCompletedSessionsDay,
+    idxTaskBlocksDay,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -836,6 +1302,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('completed_sessions', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'presets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('task_blocks', kind: UpdateKind.update)],
     ),
   ]);
 }
@@ -879,6 +1352,24 @@ final class $$PresetsTableReferences
     final cache = $_typedResult.readTableOrNull(
       _completedSessionsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TaskBlocksTable, List<TaskBlockRow>>
+  _taskBlocksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.taskBlocks,
+    aliasName: 'presets__id__task_blocks__preset_id',
+  );
+
+  $$TaskBlocksTableProcessedTableManager get taskBlocksRefs {
+    final manager = $$TaskBlocksTableTableManager(
+      $_db,
+      $_db.taskBlocks,
+    ).filter((f) => f.presetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_taskBlocksRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -940,6 +1431,31 @@ class $$PresetsTableFilterComposer
           }) => $$CompletedSessionsTableFilterComposer(
             $db: $db,
             $table: $db.completedSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> taskBlocksRefs(
+    Expression<bool> Function($$TaskBlocksTableFilterComposer f) f,
+  ) {
+    final $$TaskBlocksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.taskBlocks,
+      getReferencedColumn: (t) => t.presetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskBlocksTableFilterComposer(
+            $db: $db,
+            $table: $db.taskBlocks,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1042,6 +1558,31 @@ class $$PresetsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> taskBlocksRefs<T extends Object>(
+    Expression<T> Function($$TaskBlocksTableAnnotationComposer a) f,
+  ) {
+    final $$TaskBlocksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.taskBlocks,
+      getReferencedColumn: (t) => t.presetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TaskBlocksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.taskBlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PresetsTableTableManager
@@ -1057,7 +1598,10 @@ class $$PresetsTableTableManager
           $$PresetsTableUpdateCompanionBuilder,
           (Preset, $$PresetsTableReferences),
           Preset,
-          PrefetchHooks Function({bool completedSessionsRefs})
+          PrefetchHooks Function({
+            bool completedSessionsRefs,
+            bool taskBlocksRefs,
+          })
         > {
   $$PresetsTableTableManager(_$AppDatabase db, $PresetsTable table)
     : super(
@@ -1110,37 +1654,63 @@ class $$PresetsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({completedSessionsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (completedSessionsRefs) db.completedSessions,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (completedSessionsRefs)
-                    await $_getPrefetchedData<
-                      Preset,
-                      $PresetsTable,
-                      CompletedSession
-                    >(
-                      currentTable: table,
-                      referencedTable: $$PresetsTableReferences
-                          ._completedSessionsRefsTable(db),
-                      managerFromTypedResult: (p0) => $$PresetsTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).completedSessionsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.presetId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({completedSessionsRefs = false, taskBlocksRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (completedSessionsRefs) db.completedSessions,
+                    if (taskBlocksRefs) db.taskBlocks,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (completedSessionsRefs)
+                        await $_getPrefetchedData<
+                          Preset,
+                          $PresetsTable,
+                          CompletedSession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PresetsTableReferences
+                              ._completedSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PresetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).completedSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.presetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (taskBlocksRefs)
+                        await $_getPrefetchedData<
+                          Preset,
+                          $PresetsTable,
+                          TaskBlockRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PresetsTableReferences
+                              ._taskBlocksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PresetsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).taskBlocksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.presetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1157,7 +1727,7 @@ typedef $$PresetsTableProcessedTableManager =
       $$PresetsTableUpdateCompanionBuilder,
       (Preset, $$PresetsTableReferences),
       Preset,
-      PrefetchHooks Function({bool completedSessionsRefs})
+      PrefetchHooks Function({bool completedSessionsRefs, bool taskBlocksRefs})
     >;
 typedef $$CompletedSessionsTableCreateCompanionBuilder =
     CompletedSessionsCompanion Function({
@@ -1507,6 +2077,357 @@ typedef $$CompletedSessionsTableProcessedTableManager =
       CompletedSession,
       PrefetchHooks Function({bool presetId})
     >;
+typedef $$TaskBlocksTableCreateCompanionBuilder =
+    TaskBlocksCompanion Function({
+      Value<int> id,
+      required String title,
+      required String day,
+      required int startMinute,
+      required int endMinute,
+      Value<int?> presetId,
+      Value<int?> color,
+    });
+typedef $$TaskBlocksTableUpdateCompanionBuilder =
+    TaskBlocksCompanion Function({
+      Value<int> id,
+      Value<String> title,
+      Value<String> day,
+      Value<int> startMinute,
+      Value<int> endMinute,
+      Value<int?> presetId,
+      Value<int?> color,
+    });
+
+final class $$TaskBlocksTableReferences
+    extends BaseReferences<_$AppDatabase, $TaskBlocksTable, TaskBlockRow> {
+  $$TaskBlocksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PresetsTable _presetIdTable(_$AppDatabase db) =>
+      db.presets.createAlias('task_blocks__preset_id__presets__id');
+
+  $$PresetsTableProcessedTableManager? get presetId {
+    final $_column = $_itemColumn<int>('preset_id');
+    if ($_column == null) return null;
+    final manager = $$PresetsTableTableManager(
+      $_db,
+      $_db.presets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_presetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TaskBlocksTableFilterComposer
+    extends Composer<_$AppDatabase, $TaskBlocksTable> {
+  $$TaskBlocksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMinute => $composableBuilder(
+    column: $table.startMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMinute => $composableBuilder(
+    column: $table.endMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PresetsTableFilterComposer get presetId {
+    final $$PresetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.presetId,
+      referencedTable: $db.presets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PresetsTableFilterComposer(
+            $db: $db,
+            $table: $db.presets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TaskBlocksTableOrderingComposer
+    extends Composer<_$AppDatabase, $TaskBlocksTable> {
+  $$TaskBlocksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMinute => $composableBuilder(
+    column: $table.startMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMinute => $composableBuilder(
+    column: $table.endMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PresetsTableOrderingComposer get presetId {
+    final $$PresetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.presetId,
+      referencedTable: $db.presets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PresetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.presets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TaskBlocksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TaskBlocksTable> {
+  $$TaskBlocksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get startMinute => $composableBuilder(
+    column: $table.startMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endMinute =>
+      $composableBuilder(column: $table.endMinute, builder: (column) => column);
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  $$PresetsTableAnnotationComposer get presetId {
+    final $$PresetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.presetId,
+      referencedTable: $db.presets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PresetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.presets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TaskBlocksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TaskBlocksTable,
+          TaskBlockRow,
+          $$TaskBlocksTableFilterComposer,
+          $$TaskBlocksTableOrderingComposer,
+          $$TaskBlocksTableAnnotationComposer,
+          $$TaskBlocksTableCreateCompanionBuilder,
+          $$TaskBlocksTableUpdateCompanionBuilder,
+          (TaskBlockRow, $$TaskBlocksTableReferences),
+          TaskBlockRow,
+          PrefetchHooks Function({bool presetId})
+        > {
+  $$TaskBlocksTableTableManager(_$AppDatabase db, $TaskBlocksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TaskBlocksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TaskBlocksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TaskBlocksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> day = const Value.absent(),
+                Value<int> startMinute = const Value.absent(),
+                Value<int> endMinute = const Value.absent(),
+                Value<int?> presetId = const Value.absent(),
+                Value<int?> color = const Value.absent(),
+              }) => TaskBlocksCompanion(
+                id: id,
+                title: title,
+                day: day,
+                startMinute: startMinute,
+                endMinute: endMinute,
+                presetId: presetId,
+                color: color,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String title,
+                required String day,
+                required int startMinute,
+                required int endMinute,
+                Value<int?> presetId = const Value.absent(),
+                Value<int?> color = const Value.absent(),
+              }) => TaskBlocksCompanion.insert(
+                id: id,
+                title: title,
+                day: day,
+                startMinute: startMinute,
+                endMinute: endMinute,
+                presetId: presetId,
+                color: color,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TaskBlocksTable, TaskBlockRow>(table),
+                  $$TaskBlocksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({presetId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (presetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.presetId,
+                                referencedTable: $$TaskBlocksTableReferences
+                                    ._presetIdTable(db),
+                                referencedColumn: $$TaskBlocksTableReferences
+                                    ._presetIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TaskBlocksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TaskBlocksTable,
+      TaskBlockRow,
+      $$TaskBlocksTableFilterComposer,
+      $$TaskBlocksTableOrderingComposer,
+      $$TaskBlocksTableAnnotationComposer,
+      $$TaskBlocksTableCreateCompanionBuilder,
+      $$TaskBlocksTableUpdateCompanionBuilder,
+      (TaskBlockRow, $$TaskBlocksTableReferences),
+      TaskBlockRow,
+      PrefetchHooks Function({bool presetId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1515,4 +2436,6 @@ class $AppDatabaseManager {
       $$PresetsTableTableManager(_db, _db.presets);
   $$CompletedSessionsTableTableManager get completedSessions =>
       $$CompletedSessionsTableTableManager(_db, _db.completedSessions);
+  $$TaskBlocksTableTableManager get taskBlocks =>
+      $$TaskBlocksTableTableManager(_db, _db.taskBlocks);
 }

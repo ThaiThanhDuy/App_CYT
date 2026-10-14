@@ -13,3 +13,33 @@ enum HeatmapMetric {
   /// Từ giá trị này trở lên dùng màu đậm nhất.
   final int maxValue;
 }
+
+/// Heatmap ở màn chính hiển thị khoảng nào.
+enum HeatmapRange {
+  /// Lịch tháng hiện tại (7 cột thứ 2 → CN).
+  month('Month'),
+
+  /// 7 ngày của tuần hiện tại, ô thật to.
+  week('Week');
+
+  const HeatmapRange(this.label);
+
+  final String label;
+}
+
+/// Các ngày (00:00) của khoảng [range] chứa [today].
+List<DateTime> heatmapRangeDays(HeatmapRange range, DateTime today) {
+  switch (range) {
+    case HeatmapRange.month:
+      final last = DateTime(today.year, today.month + 1, 0).day;
+      return [
+        for (var d = 1; d <= last; d++) DateTime(today.year, today.month, d),
+      ];
+    case HeatmapRange.week:
+      final monday = today.day - (today.weekday - 1);
+      return [
+        for (var i = 0; i < 7; i++)
+          DateTime(today.year, today.month, monday + i),
+      ];
+  }
+}

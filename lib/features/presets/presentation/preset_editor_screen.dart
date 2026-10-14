@@ -58,9 +58,12 @@ class _StepDraft {
 
 /// Tạo mới ([initial] = null) hoặc sửa một preset.
 class PresetEditorScreen extends ConsumerStatefulWidget {
-  const PresetEditorScreen({super.key, this.initial});
+  const PresetEditorScreen({super.key, this.initial, this.initialName});
 
   final TimerPlan? initial;
+
+  /// Tên điền sẵn khi tạo mới (vd. tạo session ngay trong form block).
+  final String? initialName;
 
   @override
   ConsumerState<PresetEditorScreen> createState() => _PresetEditorScreenState();
@@ -77,7 +80,7 @@ class _PresetEditorScreenState extends ConsumerState<PresetEditorScreen> {
   void initState() {
     super.initState();
     final plan = widget.initial;
-    _name = TextEditingController(text: plan?.name ?? '');
+    _name = TextEditingController(text: plan?.name ?? widget.initialName ?? '');
     // Bước có giây lẻ được làm tròn lên phút (editor chỉ sửa theo phút).
     _steps = [
       for (final s in plan?.steps ?? TimerPlan.pomodoro.steps)
@@ -163,12 +166,14 @@ class _PresetEditorScreenState extends ConsumerState<PresetEditorScreen> {
     setState(() => _saving = true);
     final repo = ref.read(presetRepositoryProvider);
     try {
+      // Tạo mới: trả id về cho màn gọi (form block tự chọn session này).
+      int? createdId;
       if (initial == null) {
-        await repo.create(plan);
+        createdId = await repo.create(plan);
       } else {
         await repo.update(plan);
       }
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context, createdId);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);

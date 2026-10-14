@@ -5,6 +5,7 @@ import '../application/stats_providers.dart';
 import '../domain/achievement_stats.dart';
 import '../domain/heatmap_metric.dart';
 import 'daily_heatmap_section.dart';
+import '../../../data/session_repository.dart';
 
 /// Bảng thành tựu ở màn chính: 3 số liệu lớn + heatmap "Hằng ngày".
 class AchievementsBoard extends ConsumerWidget {
@@ -15,8 +16,19 @@ class AchievementsBoard extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final metric = ref.watch(heatmapMetricProvider);
     final values = ref.watch(heatmapValuesProvider).value ?? const {};
-    final stats = computeAchievementStats(values, ref.watch(todayProvider));
+    final today = ref.watch(todayProvider);
+    final range = ref.watch(heatmapRangeProvider);
+    final stats = computeAchievementStats(values, today);
     final minutes = metric == HeatmapMetric.minutes;
+    // Tổng của tháng / tuần đang xem.
+    final rangeTotal = heatmapRangeDays(
+      range,
+      today,
+    ).fold(0, (sum, d) => sum + (values[dayKey(d)] ?? 0));
+    final rangeName = switch (range) {
+      HeatmapRange.month => 'THIS MONTH',
+      HeatmapRange.week => 'THIS WEEK',
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -33,10 +45,8 @@ class AchievementsBoard extends ConsumerWidget {
               VerticalDivider(color: scheme.outlineVariant, width: 32),
               // Chế độ phút: tổng quy ra giờ cho gọn.
               _StatTile(
-                value: minutes ? (stats.total / 60).round() : stats.total,
-                label: minutes
-                    ? 'HOURS · $heatmapWeeks WEEKS'
-                    : '$heatmapWeeks WEEKS',
+                value: minutes ? (rangeTotal / 60).round() : rangeTotal,
+                label: minutes ? 'HOURS · $rangeName' : rangeName,
               ),
             ],
           ),

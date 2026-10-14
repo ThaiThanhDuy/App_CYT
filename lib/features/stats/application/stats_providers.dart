@@ -143,3 +143,25 @@ final heatmapValuesProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
         },
       );
 });
+
+/// Khoảng heatmap (tháng / tuần), lưu trong SharedPreferences.
+final heatmapRangeProvider =
+    NotifierProvider<HeatmapRangeNotifier, HeatmapRange>(
+      HeatmapRangeNotifier.new,
+    );
+
+class HeatmapRangeNotifier extends Notifier<HeatmapRange> {
+  static const _key = 'heatmapRange';
+
+  @override
+  HeatmapRange build() {
+    final name = ref.watch(sharedPreferencesProvider).getString(_key);
+    return HeatmapRange.values.where((r) => r.name == name).firstOrNull ??
+        HeatmapRange.month;
+  }
+
+  Future<void> select(HeatmapRange range) async {
+    state = range;
+    await ref.read(sharedPreferencesProvider).setString(_key, range.name);
+  }
+}

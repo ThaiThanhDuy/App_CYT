@@ -303,35 +303,6 @@ class LedTimerPainter extends CustomPainter {
           lit.putIfAbsent(level, _Parts.new).segments.add((glyph.originX, seg));
         }
       }
-      // Kiểu chấm: ô giao nhau giữa các đoạn sáng theo đoạn kề sáng nhất;
-      // hình dạng ô tuỳ đoạn kề nào sáng (bo tròn chỗ gấp khúc).
-      if (style.digitStyle == LedDigitStyle.dots) {
-        final x = glyph.originX;
-        final corners = cornerLevels(levels);
-        for (final corner in LedCorner.values) {
-          final level = corners[corner];
-          final litCells = level == null
-              ? const <(int, int)>[]
-              : cornerCells(
-                  corner,
-                  lit: {
-                    for (final seg in cornerSegments[corner]!)
-                      if (levels[seg] != null) seg,
-                  },
-                );
-          for (final cell in cornerCells(corner)) {
-            // Hiệu ứng ∞: luôn vẽ nền mờ; còn lại chỉ ô không sáng mới mờ.
-            if (infinityPhase != null || !litCells.contains(cell)) {
-              off.dots.add(ledLatticeDot(x, cell.$1, cell.$2));
-            }
-          }
-          if (level != null) {
-            lit.putIfAbsent(level, _Parts.new).dots.addAll([
-              for (final (c, r) in litCells) ledLatticeDot(x, c, r),
-            ]);
-          }
-        }
-      }
       digitIndex++;
     }
 
@@ -380,7 +351,6 @@ class LedTimerPainter extends CustomPainter {
         for (final (x, seg) in parts.segments) {
           segmentDots(seg, originX: x).forEach(dot);
         }
-        parts.dots.forEach(dot);
         for (final x in parts.colons) {
           colonDots(x).forEach(dot);
         }
@@ -405,10 +375,12 @@ class LedTimerPainter extends CustomPainter {
 
   /// Cắt [segments] thành các nét ngang mảnh (kiểu màn hình retro).
   static Path _striped(Path segments, double width, double height) {
-    const pitch = SevenSegGeometry.thickness / 3.5;
+    // Nét dày đặc (6 nét / bề dày đoạn) để đầu vát chéo của đoạn hiện rõ
+    // góc cạnh như kiểu Solid, không bị cắt cụt thành bậc.
+    const pitch = SevenSegGeometry.thickness / 6;
     final stripes = Path();
     for (var y = 0.0; y < height; y += pitch) {
-      stripes.addRect(Rect.fromLTWH(-1, y, width + 2, pitch * 0.55));
+      stripes.addRect(Rect.fromLTWH(-1, y, width + 2, pitch * 0.6));
     }
     return Path.combine(PathOperation.intersect, segments, stripes);
   }
@@ -427,7 +399,4 @@ class LedTimerPainter extends CustomPainter {
 class _Parts {
   final segments = <(double, Segment)>[];
   final colons = <double>[];
-
-  /// Chấm lẻ ở các ô góc (chỉ dùng cho kiểu chấm LED).
-  final dots = <Offset>[];
 }

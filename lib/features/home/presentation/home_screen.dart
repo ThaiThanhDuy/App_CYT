@@ -5,7 +5,8 @@ import '../../../app/widgets/fade_slide_in.dart';
 import '../../../app/widgets/smooth_progress.dart';
 import '../../presets/application/preset_providers.dart';
 import '../../settings/presentation/settings_screen.dart';
-import 'session_grid.dart';
+import 'sessions_screen.dart';
+import 'schedule_screen.dart';
 import '../../stats/application/stats_providers.dart';
 import '../../stats/presentation/achievements_board.dart';
 import '../application/quote_provider.dart';
@@ -50,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
                           child: FadeSlideIn(child: AchievementsBoard()),
                         ),
                       ),
-                      ..._sessionSlivers(
+                      ..._navSlivers(
                         ref,
                         EdgeInsets.fromLTRB(hPad, 36, hPad, bottomPad),
                       ),
@@ -71,7 +72,7 @@ class HomeScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: (constraints.maxWidth * 0.4).clamp(400, 620),
+                        width: (constraints.maxWidth * 0.45).clamp(400, 780),
                         child: ListView(
                           padding: EdgeInsets.fromLTRB(hPad, 32, 0, bottomPad),
                           children: const [
@@ -82,7 +83,7 @@ class HomeScreen extends ConsumerWidget {
                       const SizedBox(width: 48),
                       Expanded(
                         child: CustomScrollView(
-                          slivers: _sessionSlivers(
+                          slivers: _navSlivers(
                             ref,
                             EdgeInsets.fromLTRB(0, 32, hPad, bottomPad),
                           ),
@@ -96,55 +97,20 @@ class HomeScreen extends ConsumerWidget {
           },
         ),
       ),
-      bottomNavigationBar: const _RunningBar(),
+      bottomNavigationBar: const RunningBar(),
       extendBody: true,
     );
   }
 
-  /// Tiêu đề "Session" + lưới card (thêm ô tạo mới ở cuối).
-  List<Widget> _sessionSlivers(WidgetRef ref, EdgeInsets padding) {
-    final presetsAsync = ref.watch(visiblePresetsProvider);
-    return [
-      SliverPadding(
-        padding: EdgeInsets.fromLTRB(
-          padding.left,
-          padding.top,
-          padding.right,
-          16,
-        ),
-        sliver: SliverToBoxAdapter(
-          child: _SectionTitle(
-            title: 'Sessions',
-            count: presetsAsync.value?.length,
-            hint: 'Long-press a card to reorder',
-          ),
-        ),
+  /// Các nút tính năng tròn: Schedule, Session, …
+  List<Widget> _navSlivers(WidgetRef ref, EdgeInsets padding) => [
+    SliverPadding(
+      padding: padding,
+      sliver: const SliverToBoxAdapter(
+        child: FadeSlideIn(index: 1, child: _FeatureButtons()),
       ),
-      switch (presetsAsync) {
-        AsyncError(:final error) => SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: padding.left),
-            child: Text('Error: $error'),
-          ),
-        ),
-        AsyncData(value: final presets) => SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            padding.left,
-            0,
-            padding.right,
-            padding.bottom,
-          ),
-          sliver: SessionGrid(presets: presets),
-        ),
-        _ => const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(48),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          ),
-        ),
-      },
-    ];
-  }
+    ),
+  ];
 }
 
 const _weekdays = [
@@ -207,15 +173,6 @@ class _Header extends ConsumerWidget {
             ],
           ),
         ),
-        IconButton(
-          tooltip: 'Settings',
-          iconSize: 26,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-          ),
-          icon: const Icon(Icons.tune_rounded),
-        ),
       ],
     );
   }
@@ -254,42 +211,119 @@ class _QuoteView extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.count, this.hint});
-
-  final String title;
-  final int? count;
-  final String? hint;
+/// Hàng nút tính năng tròn (icon + chữ ở giữa). Thêm tính năng mới thì
+/// thêm một [_FeatureButton] vào đây.
+class _FeatureButtons extends StatelessWidget {
+  const _FeatureButtons();
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Text(title, style: textTheme.titleLarge),
-        if (count != null) ...[
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+    void open(Widget screen) => Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => screen),
+    );
+    final buttons = [
+      (
+        icon: Icons.calendar_month_outlined,
+        label: 'Schedule',
+        screen: const ScheduleScreen() as Widget,
+      ),
+      (
+        icon: Icons.timer_outlined,
+        label: 'Session',
+        screen: const SessionsScreen() as Widget,
+      ),
+      // Cài đặt luôn là nút cuối cùng.
+      (
+        icon: Icons.settings_outlined,
+        label: 'Settings',
+        screen: const SettingsScreen() as Widget,
+      ),
+    ];
+    const spacing = 24.0;
+    final maxSize = MediaQuery.sizeOf(context).height * 0.42;
+    return LayoutBuilder(
+      builder: (context, c) {
+        // Chia đều bề ngang cho các nút; nút nhỏ quá thì bớt số cột (xuống
+        // dòng) để mọi nút vẫn bằng nhau.
+        var cols = buttons.length;
+        double sizeFor(int n) => (c.maxWidth - spacing * (n - 1)) / n;
+        while (cols > 1 && sizeFor(cols) < _FeatureButton.minSize) {
+          cols--;
+        }
+        final size = sizeFor(cols).clamp(_FeatureButton.minSize, maxSize);
+        return Wrap(
+          alignment: WrapAlignment.center,
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final b in buttons)
+              _FeatureButton(
+                size: size,
+                icon: b.icon,
+                label: b.label,
+                onTap: () => open(b.screen),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Nút tròn: icon và chữ nằm giữa tâm.
+class _FeatureButton extends StatelessWidget {
+  const _FeatureButton({
+    required this.size,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  /// Nhỏ nhất (màn hẹp / nhiều nút).
+  static const double minSize = 132;
+
+  final double size;
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surfaceContainer,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox.square(
+          dimension: size,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon và chữ to theo cỡ nút.
+              Icon(icon, size: size * 0.24),
+              SizedBox(height: size * 0.05),
+              Text(
+                label,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontSize: (size * 0.085).clamp(14.0, 34.0),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-        ],
-        if (hint != null) ...[
-          const Spacer(),
-          Text(hint!, style: textTheme.bodySmall),
-        ],
-      ],
+        ),
+      ),
     );
   }
 }
 
 /// Thanh nổi ở đáy khi đang có timer chạy/tạm dừng; bấm để mở đồng hồ.
-class _RunningBar extends ConsumerWidget {
-  const _RunningBar();
+class RunningBar extends ConsumerWidget {
+  const RunningBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

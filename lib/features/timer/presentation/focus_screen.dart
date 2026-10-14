@@ -1,21 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../power/presentation/power_saver.dart';
 import '../../../app/widgets/smooth_progress.dart';
 import '../../../data/data_providers.dart';
 import '../../presets/application/preset_providers.dart';
 import '../../presets/domain/plan_summary.dart';
+import '../../schedule/application/schedule_providers.dart';
+import '../../schedule/presentation/wall_clock_screen.dart';
 import '../../themes/application/theme_providers.dart';
 import '../../themes/presentation/cyt_theme.dart';
 import '../application/timer_providers.dart';
 import '../domain/timer_engine.dart';
 import 'renderers/timer_renderer.dart';
-import 'scenes/timer_scene_view.dart';
 import 'timer_actions.dart';
 
 const _fade = Duration(milliseconds: 300);
@@ -34,19 +35,6 @@ class FocusScreen extends ConsumerStatefulWidget {
 class _FocusScreenState extends ConsumerState<FocusScreen> {
   bool _zen = false;
 
-  /// Trang trong chế độ zen: 0 = đồng hồ, 1 = cảnh hoạt hình.
-  final _zenPages = PageController();
-  int _zenPage = 0;
-
-  void _goZenPage(int page) {
-    if (!_zen || !_zenPages.hasClients) return;
-    _zenPages.animateToPage(
-      page.clamp(0, 1),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
   static bool get _isMobile =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
@@ -63,12 +51,34 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
   @override
   void dispose() {
-    _zenPages.dispose();
     // Rời màn khi đang zen: trả lại thanh hệ thống.
     if (_zen && _isMobile) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }
     super.dispose();
+  }
+
+  /// Session chạy từ block đã xong mà block vẫn còn giờ: thay màn này bằng
+  /// đồng hồ treo tường cho phần còn lại của block.
+  void _continueWithWallClock() {
+    final block = ref.read(sessionBlockProvider);
+    if (block == null || block.presetId != ref.read(activePlanProvider).id) {
+      return;
+    }
+    if (!block.contains(ref.read(wallClockProvider).now())) return;
+    ref.read(sessionBlockProvider.notifier).set(null);
+    // Không trả thanh hệ thống lúc dispose: màn đồng hồ treo tường tự ẩn.
+    _zen = false;
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 600),
+        pageBuilder: (_, _, _) =>
+            WallClockScreen(blockTitle: block.title, until: block.end),
+        transitionsBuilder: (_, animation, _, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
   }
 
   static double _progress(TimerSnapshot s) {
@@ -91,6 +101,11 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     final finished = snapshot.status == TimerStatus.finished;
     final running = snapshot.status == TimerStatus.running;
     final progressStyle = ref.watch(progressStyleProvider);
+    ref.listen(timerEventsProvider, (_, next) {
+      if (next case AsyncData(value: PlanFinished())) {
+        _continueWithWallClock();
+      }
+    });
 
     final phaseLabel = finished
         ? 'COMPLETE'
@@ -123,37 +138,17 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           child: LayoutBuilder(
             builder: (context, c) => Column(
               children: [
-                // Vuốt / phím ←→ để đổi giữa đồng hồ và cảnh hoạt hình.
                 Expanded(
-                  child: ScrollConfiguration(
-                    // Desktop: cho kéo bằng chuột để đổi trang.
-                    behavior: ScrollConfiguration.of(
-                      context,
-                    ).copyWith(dragDevices: PointerDeviceKind.values.toSet()),
-                    child: PageView(
-                      controller: _zenPages,
-                      onPageChanged: (i) => setState(() => _zenPage = i),
-                      children: [
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: c.maxWidth * 0.94,
-                              maxHeight: c.maxHeight * 0.8,
-                            ),
-                            child: timerView(),
-                          ),
-                        ),
-                        // Cảnh ASCII dùng gần hết trang để nhìn to, rõ.
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(56, 8, 56, 0),
-                          child: TimerSceneView(snapshot: snapshot),
-                        ),
-                      ],
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: c.maxWidth * 0.94,
+                        maxHeight: c.maxHeight * 0.8,
+                      ),
+                      child: timerView(),
                     ),
                   ),
                 ),
-                _PageDots(count: 2, current: _zenPage, color: accent),
-                const SizedBox(height: 16),
                 // Thanh tiến trình ở đáy (bước vô hạn không có tiến trình).
                 AnimatedOpacity(
                   opacity: snapshot.isInfinite ? 0 : 1,
@@ -176,35 +171,6 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             ),
           ),
         ),
-        // Mũi tên mờ ở mép để đổi trang.
-        for (final (page, align, icon, tip) in const [
-          (1, Alignment.centerRight, Icons.chevron_right_rounded, 'Scene (→)'),
-          (0, Alignment.centerLeft, Icons.chevron_left_rounded, 'Clock (←)'),
-        ])
-          Align(
-            alignment: align,
-            child: SafeArea(
-              child: AnimatedOpacity(
-                opacity: _zenPage == page ? 0 : 1,
-                duration: _fade,
-                child: IgnorePointer(
-                  ignoring: _zenPage == page,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: IconButton(
-                      tooltip: tip,
-                      iconSize: 32,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.6,
-                      ),
-                      onPressed: () => _goZenPage(page),
-                      icon: Icon(icon),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
         Positioned(
           right: 12,
           bottom: 12,
@@ -220,251 +186,252 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       ],
     );
 
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.keyF): () => _setZen(!_zen),
-        const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
-            _goZenPage(1),
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
-            _goZenPage(0),
-        const SingleActivator(LogicalKeyboardKey.space): () =>
-            startOrPauseTimer(ref),
-        const SingleActivator(LogicalKeyboardKey.keyN): controller.skip,
-        const SingleActivator(LogicalKeyboardKey.keyR): controller.reset,
-        const SingleActivator(LogicalKeyboardKey.enter):
-            controller.finishInfinite,
-      },
-      child: Focus(
-        autofocus: true,
-        child: Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: _zen
-              ? null
-              : AppBar(
-                  backgroundColor: Colors.transparent,
-                  centerTitle: true,
-                  title: Text(
-                    plan.name,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+    // Tiết kiệm pin: tối sau 5 phút không chạm, chạm / đổi pha thì sáng.
+    return PowerSaver(
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.keyF): () => _setZen(!_zen),
+          const SingleActivator(LogicalKeyboardKey.space): () =>
+              startOrPauseTimer(ref),
+          const SingleActivator(LogicalKeyboardKey.keyN): controller.skip,
+          const SingleActivator(LogicalKeyboardKey.keyR): controller.reset,
+          const SingleActivator(LogicalKeyboardKey.enter):
+              controller.finishInfinite,
+        },
+        child: Focus(
+          autofocus: true,
+          child: Scaffold(
+            extendBodyBehindAppBar: true,
+            appBar: _zen
+                ? null
+                : AppBar(
+                    backgroundColor: Colors.transparent,
+                    centerTitle: true,
+                    title: Text(
+                      plan.name,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  actions: [
-                    IconButton(
-                      tooltip: 'Focus mode (F)',
-                      onPressed: () => _setZen(true),
-                      icon: const Icon(Icons.fullscreen_rounded),
-                    ),
-                    if (plan.id != null)
+                    actions: [
                       IconButton(
-                        tooltip: muted ? 'Unmute' : 'Mute',
-                        onPressed: () => ref
-                            .read(presetRepositoryProvider)
-                            .setMuted(plan.id!, muted: !muted),
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, a) =>
-                              ScaleTransition(scale: a, child: child),
-                          child: Icon(
-                            muted
-                                ? Icons.notifications_off_outlined
-                                : Icons.notifications_none_rounded,
-                            key: ValueKey(muted),
+                        tooltip: 'Focus mode (F)',
+                        onPressed: () => _setZen(true),
+                        icon: const Icon(Icons.fullscreen_rounded),
+                      ),
+                      if (plan.id != null)
+                        IconButton(
+                          tooltip: muted ? 'Unmute' : 'Mute',
+                          onPressed: () => ref
+                              .read(presetRepositoryProvider)
+                              .setMuted(plan.id!, muted: !muted),
+                          icon: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            transitionBuilder: (child, a) =>
+                                ScaleTransition(scale: a, child: child),
+                            child: Icon(
+                              muted
+                                  ? Icons.notifications_off_outlined
+                                  : Icons.notifications_none_rounded,
+                              key: ValueKey(muted),
+                            ),
                           ),
                         ),
-                      ),
-                    const SizedBox(width: 8),
-                  ],
-                ),
-          body: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _zen
-                ? zenBody
-                : Stack(
-                    key: const ValueKey('normal'),
-                    children: [
-                      // Quầng sáng rất nhẹ theo màu pha phía sau đồng hồ (dark mode).
-                      if (theme.brightness == Brightness.dark)
-                        Positioned.fill(
-                          child: TweenAnimationBuilder<Color?>(
-                            tween: ColorTween(end: accent),
-                            duration: const Duration(milliseconds: 600),
-                            builder: (context, c, _) => DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: RadialGradient(
-                                  radius: 0.9,
-                                  colors: [
-                                    (c ?? accent).withValues(alpha: 0.07),
-                                    Colors.transparent,
-                                  ],
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+            body: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              child: _zen
+                  ? zenBody
+                  : Stack(
+                      key: const ValueKey('normal'),
+                      children: [
+                        // Quầng sáng rất nhẹ theo màu pha phía sau đồng hồ (dark mode).
+                        if (theme.brightness == Brightness.dark)
+                          Positioned.fill(
+                            child: TweenAnimationBuilder<Color?>(
+                              tween: ColorTween(end: accent),
+                              duration: const Duration(milliseconds: 600),
+                              builder: (context, c, _) => DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    radius: 0.9,
+                                    colors: [
+                                      (c ?? accent).withValues(alpha: 0.07),
+                                      Colors.transparent,
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      SafeArea(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            // Màn ngang (điện thoại nằm ngang, desktop full screen):
-                            // đồng hồ bên trái, điều khiển bên phải.
-                            final wide =
-                                constraints.maxWidth >
-                                constraints.maxHeight * 1.2;
+                        SafeArea(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Màn ngang (điện thoại nằm ngang, desktop full screen):
+                              // đồng hồ bên trái, điều khiển bên phải.
+                              final wide =
+                                  constraints.maxWidth >
+                                  constraints.maxHeight * 1.2;
 
-                            final clock = Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AnimatedSwitcher(
-                                  duration: _fade,
-                                  child: Text(
-                                    phaseLabel,
-                                    key: ValueKey(phaseLabel),
-                                    textAlign: TextAlign.center,
-                                    style: textTheme.labelLarge?.copyWith(
-                                      letterSpacing: 4,
-                                      fontWeight: FontWeight.w600,
+                              final clock = Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AnimatedSwitcher(
+                                    duration: _fade,
+                                    child: Text(
+                                      phaseLabel,
+                                      key: ValueKey(phaseLabel),
+                                      textAlign: TextAlign.center,
+                                      style: textTheme.labelLarge?.copyWith(
+                                        letterSpacing: 4,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                _RoundDots(snapshot: snapshot, color: accent),
-                                const SizedBox(height: 10),
-                                // Giờ kết thúc bước hiện tại (chỉ màn thường).
-                                _EndAtLabel(snapshot: snapshot),
-                                SizedBox(height: wide ? 24 : 16),
-                                // Giới hạn chiều cao để đồng hồ không tràn màn thấp.
-                                ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight: wide
-                                        ? constraints.maxHeight * 0.58
-                                        : double.infinity,
+                                  const SizedBox(height: 12),
+                                  _RoundDots(snapshot: snapshot, color: accent),
+                                  const SizedBox(height: 10),
+                                  // Giờ kết thúc bước hiện tại (chỉ màn thường).
+                                  _EndAtLabel(snapshot: snapshot),
+                                  SizedBox(height: wide ? 24 : 16),
+                                  // Giới hạn chiều cao để đồng hồ không tràn màn thấp.
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: wide
+                                          ? constraints.maxHeight * 0.58
+                                          : double.infinity,
+                                    ),
+                                    child: timerView(),
                                   ),
-                                  child: timerView(),
-                                ),
-                                const SizedBox(height: 20),
-                                AnimatedSwitcher(
-                                  duration: _fade,
-                                  child: snapshot.isInfinite
-                                      ? Text(
-                                          'Elapsed ${snapshot.display}',
-                                          key: const ValueKey('elapsed'),
-                                          style: textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w300,
-                                            fontFeatures: const [
-                                              FontFeature.tabularFigures(),
-                                            ],
-                                          ),
-                                        )
-                                      : ConstrainedBox(
-                                          key: const ValueKey('progress'),
-                                          constraints: const BoxConstraints(
-                                            maxWidth: 560,
-                                          ),
-                                          child: SmoothProgress(
-                                            value: _progress(snapshot),
-                                            color: accent,
-                                            height: 4,
-                                            trackColor: theme
-                                                .colorScheme
-                                                .surfaceContainerHigh,
-                                            style: progressStyle,
-                                            barHeight: 32,
-                                            animate: running,
-                                          ),
-                                        ),
-                                ),
-                              ],
-                            );
-
-                            final controls = Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _Controls(
-                                  status: snapshot.status,
-                                  controller: controller,
-                                  onStartOrPause: () => startOrPauseTimer(ref),
-                                ),
-                                // Bước vô hạn: bấm Xong để kết thúc và tính phiên.
-                                AnimatedSize(
-                                  duration: _fade,
-                                  curve: Curves.easeOutCubic,
-                                  child:
-                                      snapshot.isInfinite &&
-                                          snapshot.status != TimerStatus.idle
-                                      ? Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 20,
-                                          ),
-                                          child: OutlinedButton.icon(
-                                            onPressed:
-                                                controller.finishInfinite,
-                                            style: OutlinedButton.styleFrom(
-                                              shape: const StadiumBorder(),
+                                  const SizedBox(height: 20),
+                                  AnimatedSwitcher(
+                                    duration: _fade,
+                                    child: snapshot.isInfinite
+                                        ? Text(
+                                            'Elapsed ${snapshot.display}',
+                                            key: const ValueKey('elapsed'),
+                                            style: textTheme.titleLarge
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w300,
+                                                  fontFeatures: const [
+                                                    FontFeature.tabularFigures(),
+                                                  ],
+                                                ),
+                                          )
+                                        : ConstrainedBox(
+                                            key: const ValueKey('progress'),
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 560,
                                             ),
-                                            icon: const Icon(
-                                              Icons.check_rounded,
+                                            child: SmoothProgress(
+                                              value: _progress(snapshot),
+                                              color: accent,
+                                              height: 4,
+                                              trackColor: theme
+                                                  .colorScheme
+                                                  .surfaceContainerHigh,
+                                              style: progressStyle,
+                                              barHeight: 32,
+                                              animate: running,
                                             ),
-                                            label: const Text('Done'),
                                           ),
-                                        )
-                                      : const SizedBox(width: 0),
-                                ),
-                                const SizedBox(height: 24),
-                                _PlanInfo(
-                                  snapshot: snapshot,
-                                  totalLabel: plan.hasInfinite
-                                      ? '∞'
-                                      : formatDuration(plan.totalDuration),
-                                  accent: accent,
-                                ),
-                              ],
-                            );
+                                  ),
+                                ],
+                              );
 
-                            if (wide) {
-                              return Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  48,
-                                  56,
-                                  48,
-                                  24,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(child: Center(child: clock)),
-                                    const SizedBox(width: 56),
-                                    controls,
-                                  ],
+                              final controls = Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _Controls(
+                                    status: snapshot.status,
+                                    controller: controller,
+                                    onStartOrPause: () =>
+                                        startOrPauseTimer(ref),
+                                  ),
+                                  // Bước vô hạn: bấm Xong để kết thúc và tính phiên.
+                                  AnimatedSize(
+                                    duration: _fade,
+                                    curve: Curves.easeOutCubic,
+                                    child:
+                                        snapshot.isInfinite &&
+                                            snapshot.status != TimerStatus.idle
+                                        ? Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 20,
+                                            ),
+                                            child: OutlinedButton.icon(
+                                              onPressed:
+                                                  controller.finishInfinite,
+                                              style: OutlinedButton.styleFrom(
+                                                shape: const StadiumBorder(),
+                                              ),
+                                              icon: const Icon(
+                                                Icons.check_rounded,
+                                              ),
+                                              label: const Text('Done'),
+                                            ),
+                                          )
+                                        : const SizedBox(width: 0),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _PlanInfo(
+                                    snapshot: snapshot,
+                                    totalLabel: plan.hasInfinite
+                                        ? '∞'
+                                        : formatDuration(plan.totalDuration),
+                                    accent: accent,
+                                  ),
+                                ],
+                              );
+
+                              if (wide) {
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    48,
+                                    56,
+                                    48,
+                                    24,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(child: Center(child: clock)),
+                                      const SizedBox(width: 56),
+                                      controls,
+                                    ],
+                                  ),
+                                );
+                              }
+                              return Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 560,
+                                  ),
+                                  child: ListView(
+                                    shrinkWrap: true,
+                                    padding: const EdgeInsets.fromLTRB(
+                                      24,
+                                      72,
+                                      24,
+                                      32,
+                                    ),
+                                    children: [
+                                      clock,
+                                      const SizedBox(height: 40),
+                                      controls,
+                                    ],
+                                  ),
                                 ),
                               );
-                            }
-                            return Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 560,
-                                ),
-                                child: ListView(
-                                  shrinkWrap: true,
-                                  padding: const EdgeInsets.fromLTRB(
-                                    24,
-                                    72,
-                                    24,
-                                    32,
-                                  ),
-                                  children: [
-                                    clock,
-                                    const SizedBox(height: 40),
-                                    controls,
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),
@@ -598,41 +565,6 @@ class _EndAtLabelState extends ConsumerState<_EndAtLabel> {
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
-    );
-  }
-}
-
-/// Chấm chỉ trang (chế độ zen): trang hiện tại là vạch dài màu pha.
-class _PageDots extends StatelessWidget {
-  const _PageDots({
-    required this.count,
-    required this.current,
-    required this.color,
-  });
-
-  final int count;
-  final int current;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final muted = Theme.of(context).colorScheme.outline;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: i == current ? 18 : 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: i == current ? color : muted,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-      ],
     );
   }
 }

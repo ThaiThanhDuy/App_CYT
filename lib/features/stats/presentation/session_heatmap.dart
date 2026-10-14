@@ -156,7 +156,15 @@ class HeatmapCell extends StatefulWidget {
     required this.size,
     required this.isToday,
     required this.brightness,
+    this.height,
+    this.child,
   });
+
+  /// Chiều cao ô; null = vuông ([size] × [size]).
+  final double? height;
+
+  /// Nội dung trong ô (số ngày, giá trị…).
+  final Widget? child;
 
   final DateTime date;
   final int count;
@@ -206,7 +214,7 @@ class _HeatmapCellState extends State<HeatmapCell>
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeOut,
           width: widget.size,
-          height: widget.size,
+          height: widget.height ?? widget.size,
           decoration: BoxDecoration(
             color: heatmapColor(
               widget.count,
@@ -214,7 +222,9 @@ class _HeatmapCellState extends State<HeatmapCell>
               palette: CytTheme.of(context).heatmap,
               max: widget.metric.maxValue,
             ),
-            borderRadius: BorderRadius.circular(widget.size * 0.2),
+            borderRadius: BorderRadius.circular(
+              (widget.size * 0.2).clamp(0.0, 14.0),
+            ),
             border: widget.isToday
                 ? Border.all(
                     color: onSurface.withValues(alpha: 0.55),
@@ -222,6 +232,7 @@ class _HeatmapCellState extends State<HeatmapCell>
                   )
                 : null,
           ),
+          child: widget.child,
         ),
       ),
     );

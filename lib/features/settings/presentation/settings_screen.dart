@@ -5,6 +5,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../app/widgets/smooth_progress.dart';
 
+import '../../backup/presentation/backup_section.dart';
+import '../../power/application/screen_control.dart';
+import '../../power/presentation/power_saver.dart';
 import '../../themes/application/theme_providers.dart';
 import '../../themes/presentation/cyt_theme.dart';
 import '../../themes/presentation/themes_screen.dart';
@@ -43,6 +46,10 @@ class SettingsScreen extends ConsumerWidget {
               const _DigitStyleSection(),
               const _InfinityStyleSection(),
               const _ProgressStyleSection(),
+              const _BatterySaverTile(),
+              const Divider(),
+              const BackupSection(),
+              const Divider(),
               ListTile(
                 leading: const Icon(Icons.info_outline),
                 title: const Text('About'),
@@ -55,6 +62,27 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Tiết kiệm pin: màn đồng hồ tối sau 5 phút không chạm, sáng lại khi chạm
+/// hoặc khi chuyển focus ↔ break.
+class _BatterySaverTile extends ConsumerWidget {
+  const _BatterySaverTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(batterySaverProvider);
+    return SwitchListTile(
+      secondary: const Icon(Icons.battery_saver_outlined),
+      title: const Text('Battery saver'),
+      subtitle: Text(
+        'Clock screens dim after ${powerSaverIdle.inMinutes} min without '
+        'touch. Tap to wake; lights up when focus and break switch.',
+      ),
+      value: enabled,
+      onChanged: (v) => ref.read(batterySaverProvider.notifier).set(v),
     );
   }
 }

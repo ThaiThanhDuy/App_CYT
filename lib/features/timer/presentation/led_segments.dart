@@ -129,131 +129,57 @@ List<Offset> segmentPolygon(
   };
 }
 
-/// Khoảng cách giữa hai chấm LED: 2 hàng chấm vừa khít độ dày đoạn.
-const double ledDotPitch = SevenSegGeometry.thickness / 2;
+/// Khoảng cách giữa hai chấm LED: 3 hàng chấm vừa khít độ dày đoạn (hàng
+/// giữa nằm đúng trục đoạn → đầu đoạn nhọn được).
+const double ledDotPitch = SevenSegGeometry.thickness / 3;
 
-// Kiểu chấm LED dùng một lưới chung cho mỗi chữ số để chấm luôn cách đều,
-// không bao giờ đè nhau ở chỗ hai đoạn gặp nhau:
+// Kiểu chấm LED: mỗi chữ số dùng một lưới chung (bước = ledDotPitch, 18 cột
+// × 33 hàng) để chấm luôn cách đều, không bao giờ đè nhau. Chấm của một đoạn
+// là các ô lưới có tâm nằm trong đúng hình lục giác của thanh Solid: 3 hàng,
+// hàng giữa dài hơn hai hàng bên 1 chấm mỗi đầu → đầu đoạn nhọn hình tam
+// giác, hai đoạn gặp nhau ở góc có khe chéo y như kiểu Solid.
 //
-//   cột:  0 1 | 2 … 9 | 10 11        (12 cột × 22 hàng, bước = ledDotPitch)
-//   hàng 0-1      [ a ]
-//   hàng 2-9  [f]         [b]
-//   hàng 10-11    [ g ]
-//   hàng 12-19 [e]        [c]
-//   hàng 20-21    [ d ]
-//
-// Ô ở chỗ giao nhau (góc) thuộc về [LedCorner], sáng khi đoạn kề sáng.
+//      ● ● ● ● ●
+//    ● ● ● ● ● ● ●      (đoạn ngang: 12 · 14 · 12 chấm)
+//      ● ● ● ● ●
 
-/// Số cột / hàng lưới chấm của một chữ số.
-const int ledDotCols = 12;
-const int ledDotRows = 22;
-
-Offset _latticeDot(double originX, int col, int row) =>
-    Offset(originX + ledDotPitch * (col + 0.5), ledDotPitch * (row + 0.5));
-
-/// Tâm các chấm của đoạn [segment] (2 hàng × 8 chấm trên lưới chung).
+/// Tâm các chấm của đoạn [segment] cho chữ số bắt đầu tại [originX].
 List<Offset> segmentDots(Segment segment, {double originX = 0}) {
-  // (cột đầu, hàng đầu, số cột, số hàng)
-  final (c0, r0, cols, rows) = switch (segment) {
-    Segment.a => (2, 0, 8, 2),
-    Segment.g => (2, 10, 8, 2),
-    Segment.d => (2, 20, 8, 2),
-    Segment.f => (0, 2, 2, 8),
-    Segment.b => (10, 2, 2, 8),
-    Segment.e => (0, 12, 2, 8),
-    Segment.c => (10, 12, 2, 8),
-  };
-  return [
-    for (var r = r0; r < r0 + rows; r++)
-      for (var c = c0; c < c0 + cols; c++) _latticeDot(originX, c, r),
-  ];
-}
-
-/// Ô giao nhau 2×2 chấm giữa các đoạn.
-enum LedCorner { topLeft, topRight, midLeft, midRight, bottomLeft, bottomRight }
-
-/// Các đoạn gặp nhau tại mỗi góc: góc sáng khi một trong số đó sáng.
-const Map<LedCorner, Set<Segment>> cornerSegments = {
-  LedCorner.topLeft: {Segment.a, Segment.f},
-  LedCorner.topRight: {Segment.a, Segment.b},
-  LedCorner.midLeft: {Segment.f, Segment.e, Segment.g},
-  LedCorner.midRight: {Segment.b, Segment.c, Segment.g},
-  LedCorner.bottomLeft: {Segment.e, Segment.d},
-  LedCorner.bottomRight: {Segment.c, Segment.d},
-};
-
-/// Ô (cột, hàng) của góc khi các đoạn kề trong [lit] đang sáng; [lit] null
-/// = mọi ô góc có thể sáng (dùng để vẽ nền chấm mờ).
-///
-/// - Bốn góc ngoài cùng: chỉ chấm phía trong → góc bo tròn bậc thang 1 chấm.
-/// - Hai góc giữa: nét chạy thẳng qua (đoạn trên + dưới cùng sáng) thì đủ
-///   2×2; gấp khúc kiểu chữ L (vd. số 4, số 2) chỉ giữ chấm phía trong để
-///   bo tròn như góc ngoài; chỉ đoạn g sáng thì giữ cột phía trong.
-List<(int, int)> cornerCells(LedCorner corner, {Set<Segment>? lit}) {
-  switch (corner) {
-    case LedCorner.topLeft:
-      return const [(1, 1)];
-    case LedCorner.topRight:
-      return const [(10, 1)];
-    case LedCorner.bottomLeft:
-      return const [(1, 20)];
-    case LedCorner.bottomRight:
-      return const [(10, 20)];
-    case LedCorner.midLeft || LedCorner.midRight:
-      final left = corner == LedCorner.midLeft;
-      final (inner, outer) = left ? (1, 0) : (10, 11);
-      final upSeg = left ? Segment.f : Segment.b;
-      final downSeg = left ? Segment.e : Segment.c;
-      final all = [(outer, 10), (inner, 10), (outer, 11), (inner, 11)];
-      if (lit == null) return all;
-      final up = lit.contains(upSeg);
-      final down = lit.contains(downSeg);
-      final side = lit.contains(Segment.g);
-      return switch ((up, down, side)) {
-        (true, true, _) => all,
-        (true, false, _) => [(inner, 10)],
-        (false, true, _) => [(inner, 11)],
-        (false, false, true) => [(inner, 10), (inner, 11)],
-        (false, false, false) => const [],
-      };
-  }
-}
-
-/// Tâm chấm (trên lưới chung) của ô [col], [row] trong chữ số ở [originX].
-Offset ledLatticeDot(double originX, int col, int row) =>
-    _latticeDot(originX, col, row);
-
-/// Tâm các chấm của ô góc khi các đoạn kề trong [lit] sáng (xem
-/// [cornerCells]); [lit] null = mọi chấm góc có thể sáng.
-List<Offset> cornerDots(
-  LedCorner corner, {
-  double originX = 0,
-  Set<Segment>? lit,
-}) => [
-  for (final (c, r) in cornerCells(corner, lit: lit))
-    _latticeDot(originX, c, r),
-];
-
-/// Mức sáng của từng góc theo mức sáng các đoạn ([levels]): lấy mức lớn
-/// nhất của các đoạn kề; không đoạn kề nào sáng thì không có trong kết quả.
-Map<LedCorner, double> cornerLevels(Map<Segment, double> levels) {
-  final result = <LedCorner, double>{};
-  for (final MapEntry(key: corner, value: segs) in cornerSegments.entries) {
-    double? best;
-    for (final seg in segs) {
-      final v = levels[seg];
-      if (v != null && (best == null || v > best)) best = v;
+  const p = ledDotPitch;
+  const g = SevenSegGeometry.gap;
+  // Sai số dấu phẩy động khi so tâm chấm với mép thanh.
+  const eps = 1e-6;
+  final (start, end) = segmentAxis(segment, originX: originX);
+  final horizontal = start.dy == end.dy;
+  // Gốc lưới theo chiều dọc trục đoạn.
+  final base = horizontal ? originX : 0.0;
+  final from = horizontal ? start.dx : start.dy;
+  final to = horizontal ? end.dx : end.dy;
+  final dots = <Offset>[];
+  for (final k in const [-1, 0, 1]) {
+    final cross = k * p;
+    // Lục giác: càng xa trục, hai đầu càng thụt vào (vát 45°).
+    final lo = from + g + cross.abs();
+    final hi = to - g - cross.abs();
+    final i0 = ((lo - base) / p - 0.5 - eps).ceil();
+    final i1 = ((hi - base) / p - 0.5 + eps).floor();
+    for (var i = i0; i <= i1; i++) {
+      final along = base + (i + 0.5) * p;
+      dots.add(
+        horizontal
+            ? Offset(along, start.dy + cross)
+            : Offset(start.dx + cross, along),
+      );
     }
-    if (best != null) result[corner] = best;
   }
-  return result;
+  return dots;
 }
 
-/// Tâm các chấm của dấu ':' (mỗi ô vuông 2×2 chấm).
+/// Tâm các chấm của dấu ':' (mỗi ô vuông 3×3 chấm).
 List<Offset> colonDots(double originX) => [
   for (final square in colonPolygons(originX))
-    for (final dy in const [-0.5, 0.5])
-      for (final dx in const [-0.5, 0.5])
+    for (final dy in const [-1.0, 0.0, 1.0])
+      for (final dx in const [-1.0, 0.0, 1.0])
         Offset(
               (square[0].dx + square[2].dx) / 2,
               (square[0].dy + square[2].dy) / 2,
